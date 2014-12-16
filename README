@@ -1,0 +1,161 @@
+cgroup_tests
+============
+
+A very simple cgroup test program which tortures the cgroup
+filesystem a bit.
+
+
+How it works
+------------
+
+Initially it creates a random directory tree and places a memory_hog
+(or any other program) to a cgroup. After that it moves them around
+and removes/creates new cgroups at random places.  For each child
+which dies a new one is created.
+
+cgroup_tests is not really smart in creating the trees. It just
+tries to as chaotic as possible and stress testing the API.
+
+
+How to build
+------------
+
+The programs depend on asprintf, so you probably need a glibc for
+getting building and running. Apart of this, no additional special
+dependencies exists.
+
+    $ make
+    gcc -Wall  -g -O0  cgroup_tests.c   -o cgroup_tests
+    gcc -Wall  -g -O0  memory_hog.c   -o memory_hog
+    gcc -Wall  -g -O0  dir_walker.c   -o dir_walker
+
+
+Usage
+-----
+
+A few simple examples
+
+    # ./cgroup_tests ./memory_hog
+
+will create 100 cgroups under /sys/fs/cgroup/memory and 50 memory hogs
+and shuffles them around for 60 seconds. Each memory hog allocates
+10M, write a patter, waits a second and releases the memory again. 5
+times repeated.
+
+    # ./cgroup_tests ./memory_hog
+    mkdir 791 rmdir 690 moved 921 forked 65 reaped 15
+
+    [root@test-kvm memory]# cd /sys/fs/cgroup/memory && tree -d
+    .
+    └── cgt-5178
+    ├── 0
+    │   └── 5
+    │       └── 10
+    │           └── 15
+    │               ├── 1464
+    │               │   └── 1465
+    │               └── 20
+    │                   └── 25
+    │                       └── 30
+    │                           ├── 1433
+    │                           └── 35
+    │                               ├── 1007
+    │                               │   └── 1311
+    │                               └── 40
+    │                                   ├── 1339
+    │                                   ├── 1340
+    │                                   │   └── 1365
+    │                                   ├── 1344
+    │                                   │   ├── 1415
+    │                                   │   │   ├── 1459
+    │                                   │   │   ├── 1460
+    │                                   │   │   ├── 1461
+    │                                   │   │   ├── 1462
+    │                                   │   │   └── 1463
+    │                                   │   ├── 1416
+    │                                   │   ├── 1417
+    │                                   │   │   └── 1446
+    │                                   │   └── 1420
+    │                                   │       └── 1423
+    │                                   │           └── 1426
+    │                                   ├── 45
+    │                                   │   └── 50
+    │                                   │       ├── 55
+    │                                   │       │   ├── 60
+    │                                   │       │   │   ├── 1466
+    │                                   │       │   │   └── 229
+    │                                   │       │   │       ├── 1355
+    │                                   │       │   │       ├── 1437
+    │                                   │       │   │       └── 251
+    │                                   │       │   │           ├── 1406
+    │                                   │       │   │           └── 257
+    │                                   │       │   └── 645
+    │                                   │       │       └── 652
+    │                                   │       │           └── 663
+    │                                   │       │               └── 712
+    │                                   │       │                   └── 843
+    │                                   │       │                       ├── 930
+    │                                   │       │                       │   └── 1410
+    │                                   │       │                       └── 932
+    │                                   │       │                           └── 1432
+    │                                   │       └── 57
+    │                                   ├── 951
+    │                                   │   └── 1112
+    │                                   │       └── 1361
+    │                                   │           └── 1419
+    │                                   └── 952
+    │                                       └── 1149
+    │                                           ├── 1152
+    │                                           │   └── 1243
+    │                                           │       ├── 1291
+    │                                           │       │   └── 1296
+    │                                           │       │       └── 1302
+    │                                           │       │           ├── 1326
+    │                                           │       │           ├── 1329
+    │                                           │       │           │   ├── 1346
+    │                                           │       │           │   │   ├── 1453
+    │                                           │       │           │   │   └── 1454
+    │                                           │       │           │   │       ├── 1455
+    │                                           │       │           │   │       └── 1456
+    │                                           │       │           │   └── 1380
+    │                                           │       │           │       ├── 1398
+    │                                           │       │           │       │   └── 1422
+    │                                           │       │           │       └── 1399
+    │                                           │       │           └── 1330
+    │                                           │       ├── 1368
+    │                                           │       │   ├── 1451
+    │                                           │       │   └── 1452
+    │                                           │       ├── 1427
+    │                                           │       └── 1428
+    │                                           │           └── 1440
+    │                                           ├── 1434
+    │                                           └── 1435
+    ├── 1108
+    │   ├── 1441
+    │   └── 1442
+    ├── 1183
+    │   ├── 1337
+    │   │   ├── 1391
+    │   │   ├── 1392
+    │   │   │   └── 1438
+    │   │   ├── 1393
+    │   │   │   ├── 1444
+    │   │   │   └── 1445
+    │   │   └── 1436
+    │   └── 1411
+    └── 1194
+    ├── 1309
+    │   └── 1336
+    ├── 1457
+    └── 1458
+
+    101 directories
+
+
+Let's say you want to to create a lot of cgroups and only a few
+clients which only exist short you could do this here:
+
+    # ./cgroup_tests -g 1000 -c 200 -t 20 ./memory_hog -- -s 0 -l 1 -b 1M
+
+cgroup_tests creates 10000 cgrougs and tries to keep 200 memory hogs
+alive. They will only allocated 1M each and do not loop or sleep at all.
