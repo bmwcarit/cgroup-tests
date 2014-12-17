@@ -74,6 +74,7 @@ static unsigned int nr_cgroups;
 static unsigned int cgroup_id;
 static char **child_argv;
 static int terminate;
+static int modify_enabled = 1;
 
 struct stats {
 	unsigned int mkdir;
@@ -687,6 +688,9 @@ static void run(void)
 		 * children. */
 		create_random_cgroups(root);
 
+		if (!modify_enabled)
+			goto wait;
+
 		/* Pick a child randomly and a destionation cgroup */
 		cid = rand() % nr_children;
 		gid = rand() % nr_cgroups;
@@ -706,10 +710,11 @@ static void run(void)
 		remove_empty_cgroups(src);
 		remove_empty_cgroups(dst);
 
+	wait:
 		/* Collect children which are zombies now. */
 		while (collect_zombies(root))
 			;
-	wait:
+
 		print_stats();
 		usleep(1000);
 	};
@@ -756,6 +761,7 @@ static void usage(const char *progname)
 	printf("\t-s --siblings\t- Maximal number of sub-cgroups per cgroup\n");
 	printf("\t-t --time\t- Time running the hog\n");
 	printf("\t-p --path\t- Path to cgroup controller [/sys/fs/cgroup/memory]\n");
+	printf("\t-n --no-moving\t- Static tree; no mkdir/rmdir\n");
 	printf("\t-d --debug\t- Enable debuggin output\n");
 	printf("\t-h --help\t- Print usage (d'oh)\n");
 }
@@ -766,6 +772,7 @@ static struct option long_options[] = {
 	{ "siblings",	required_argument,	0,	's' },
 	{ "time",	required_argument,	0,	't' },
 	{ "path",	required_argument,	0,	'p' },
+	{ "no-moving",	no_argument,		0,	'n' },
 	{ "debug",	no_argument,		0,	'd' },
 	{ "help",	no_argument,		0,	'h' },
 	{ 0,		0,			0,	0 },
@@ -780,7 +787,7 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 
 	for (;;) {
-		c = getopt_long(argc, argv, "c:g:s:t:p:dh",
+		c = getopt_long(argc, argv, "c:g:s:t:p:ndh",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -800,6 +807,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'p':
 			path = strdup(optarg);
+			break;
+		case 'n':
+			modify_enabled = 0;
 			break;
 		case 'd':
 			debug_enabled = 1;
