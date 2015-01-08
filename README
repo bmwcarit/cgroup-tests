@@ -159,3 +159,11 @@ clients which only exist short you could do this here:
 
 cgroup_tests creates 10000 cgrougs and tries to keep 200 memory hogs
 alive. They will only allocated 1M each and do not loop or sleep at all.
+
+
+Acknowlegment
+-------------
+
+- list.h is taken from the Linux kernel (include/linux/list.h) and
+  modified by <kazutomo@mcs.anl.gov> for userland usage. Note
+  this is a GPL v2 licensed header.
